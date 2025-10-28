@@ -163,12 +163,19 @@ export default {
       // Call API if enabled
       if (this.content.use_api && this.content.endpoint_toggle) {
         try {
+          console.log('Starting timer with endpoint:', this.content.endpoint_toggle);
+          console.log('Sending data:', { user_id: this.content.user_id });
+
           const response = await this.callAPI(this.content.endpoint_toggle, {
             user_id: this.content.user_id
           }, 'POST');
+
+          console.log('API response:', response);
+
           // Store the ID from response if available
           if (response && response.id) {
             this.timeEntryId = response.id;
+            console.log('Time entry ID stored:', this.timeEntryId);
           }
 
           // Emit refresh event for WeWeb to reload collections
@@ -181,6 +188,7 @@ export default {
           });
         } catch (error) {
           console.error('Failed to call toggle API (start):', error);
+          console.error('Error details:', error.message);
           // Continue with local timer even if API fails
         }
       }
@@ -209,9 +217,15 @@ export default {
       // Call API if enabled
       if (this.content.use_api && this.content.endpoint_toggle) {
         try {
-          await this.callAPI(this.content.endpoint_toggle, {
-            user_id: this.content.user_id
-          }, 'POST');
+          console.log('Stopping timer with endpoint:', this.content.endpoint_toggle);
+          console.log('Sending data:', { user_id: this.content.user_id, time_entry_id: this.timeEntryId });
+
+          const payload = { user_id: this.content.user_id };
+          if (this.timeEntryId) {
+            payload.time_entry_id = this.timeEntryId;
+          }
+
+          await this.callAPI(this.content.endpoint_toggle, payload, 'POST');
 
           // Emit refresh event for WeWeb to reload collections
           this.$emit('trigger-event', {
@@ -223,6 +237,7 @@ export default {
           });
         } catch (error) {
           console.error('Failed to call toggle API (stop):', error);
+          console.error('Error details:', error.message);
         }
       }
 
