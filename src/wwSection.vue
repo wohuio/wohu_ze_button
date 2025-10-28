@@ -86,22 +86,42 @@ export default {
     };
   },
   mounted() {
+    console.log('=== COMPONENT MOUNTED ===');
+    console.log('use_api:', this.content.use_api);
+    console.log('user_id:', this.content.user_id);
+    console.log('endpoint_active:', this.content.endpoint_active);
+    console.log('endpoint_toggle:', this.content.endpoint_toggle);
+
     // Initialize WeWeb variables first
     this.setUserIdVar(this.content.user_id || 297);
 
     // Use nextTick to ensure component is fully initialized
     this.$nextTick(async () => {
-      // Check API for active timer first (if API is enabled)
-      if (this.content.use_api) {
-        await this.checkActiveTimer();
+      console.log('=== CHECKING FOR ACTIVE TIMER ===');
+
+      // ALWAYS check API first if enabled
+      if (this.content.use_api && this.content.endpoint_active) {
+        console.log('API is enabled, checking for active timer...');
+        const hasActiveTimer = await this.checkActiveTimer();
+        console.log('Has active timer:', hasActiveTimer);
+
+        if (!hasActiveTimer) {
+          console.log('No active timer from API, checking localStorage as fallback...');
+          this.restoreTimerState();
+        }
       } else {
-        // Otherwise restore from localStorage
+        console.log('API not enabled, using localStorage only');
         this.restoreTimerState();
       }
 
       // Update WeWeb variables after restore
       this.setCurrentTimeVar(this.currentSeconds);
       this.setIsRunningVar(this.isRunning);
+
+      console.log('=== MOUNT COMPLETE ===');
+      console.log('isRunning:', this.isRunning);
+      console.log('currentSeconds:', this.currentSeconds);
+      console.log('timeEntryId:', this.timeEntryId);
     });
   },
   watch: {
