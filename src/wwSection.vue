@@ -29,7 +29,7 @@ export default {
       default: () => ({
         use_api: false,
         user_id: 297,
-        endpoint_toggle: 'https://xv05-su7k-rvc8.f2.xano.io/api:6iYtDb6K/toggle',
+        endpoint_toggle: 'https://xv05-su7k-rvc8.f2.xano.io/api:if8X12tw/toggle',
         endpoint_active: 'https://xv05-su7k-rvc8.f2.xano.io/api:if8X12tw/active',
         background_color: '#FFFFFF',
         text_color: '#1F2937',
