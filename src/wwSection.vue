@@ -1,5 +1,5 @@
 <template>
-  <div class="simple-timer" :style="containerStyles">
+  <div class="simple-timer" :style="containerStyles" v-bind="$attrs">
     <div class="timer-display">
       <div :class="['timer', { running: isRunning }]">
         {{ formattedTime }}
@@ -20,6 +20,7 @@
 <script>
 export default {
   name: 'SimpleTimer',
+  inheritAttrs: false,
   emits: ['trigger-event'],
   props: {
     uid: { type: String, required: true },
