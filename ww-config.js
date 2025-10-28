@@ -27,7 +27,17 @@ export default {
         endpoint_toggle: {
             label: { en: 'API Endpoint: Toggle Timer', de: 'API Endpoint: Toggle Timer' },
             type: 'Text',
-            defaultValue: 'https://xv05-su7k-rvc8.f2.xano.io/api:6iYtDb6K/toggle',
+            defaultValue: 'https://xv05-su7k-rvc8.f2.xano.io/api:if8X12tw/toggle',
+            bindable: true,
+            section: 'settings',
+            options: {
+                placeholder: 'Endpoint URL or ID'
+            }
+        },
+        endpoint_active: {
+            label: { en: 'API Endpoint: Check Active Timer', de: 'API Endpoint: Aktiven Timer prüfen' },
+            type: 'Text',
+            defaultValue: 'https://xv05-su7k-rvc8.f2.xano.io/api:if8X12tw/active',
             bindable: true,
             section: 'settings',
             options: {
