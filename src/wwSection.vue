@@ -218,10 +218,8 @@ export default {
         try {
           console.log('Stopping timer with endpoint:', this.content.endpoint_toggle);
 
+          // Send only user_id - let API determine which timer to stop
           const stopPayload = { user_id: this.content.user_id };
-          if (this.timeEntryId) {
-            stopPayload.time_entry_id = this.timeEntryId;
-          }
           console.log('Sending data:', JSON.stringify(stopPayload));
 
           const stopResponse = await this.callAPI(this.content.endpoint_toggle, stopPayload, 'POST');
