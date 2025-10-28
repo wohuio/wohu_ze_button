@@ -30,6 +30,7 @@ export default {
         use_api: false,
         user_id: 297,
         endpoint_toggle: 'https://xv05-su7k-rvc8.f2.xano.io/api:6iYtDb6K/toggle',
+        endpoint_active: 'https://xv05-su7k-rvc8.f2.xano.io/api:if8X12tw/active',
         background_color: '#FFFFFF',
         text_color: '#1F2937',
         timer_color: '#6366f1',
@@ -89,8 +90,15 @@ export default {
     this.setUserIdVar(this.content.user_id || 297);
 
     // Use nextTick to ensure component is fully initialized
-    this.$nextTick(() => {
-      this.restoreTimerState();
+    this.$nextTick(async () => {
+      // Check API for active timer first (if API is enabled)
+      if (this.content.use_api) {
+        await this.checkActiveTimer();
+      } else {
+        // Otherwise restore from localStorage
+        this.restoreTimerState();
+      }
+
       // Update WeWeb variables after restore
       this.setCurrentTimeVar(this.currentSeconds);
       this.setIsRunningVar(this.isRunning);
@@ -98,7 +106,7 @@ export default {
   },
   watch: {
     'content.user_id': {
-      handler(newVal, oldVal) {
+      async handler(newVal, oldVal) {
         this.setUserIdVar(newVal || 297);
 
         // When user changes, stop current timer and load new user's state
@@ -112,8 +120,12 @@ export default {
           this.startTime = null;
           this.timeEntryId = null;
 
-          // Load new user's timer state
-          this.restoreTimerState();
+          // Load new user's timer state (check API first if enabled)
+          if (this.content.use_api) {
+            await this.checkActiveTimer();
+          } else {
+            this.restoreTimerState();
+          }
         }
       },
       immediate: true,
@@ -150,10 +162,18 @@ export default {
     this.stopInterval();
   },
   methods: {
-    toggleTimer() {
+    async toggleTimer() {
       if (this.isRunning) {
         this.stopTimer();
       } else {
+        // Check for active timer before starting
+        if (this.content.use_api) {
+          const hasActiveTimer = await this.checkActiveTimer();
+          if (hasActiveTimer) {
+            console.log('Active timer found, continuing existing timer');
+            return; // Don't start a new timer, just continue the existing one
+          }
+        }
         this.startTimer();
       }
     },
@@ -385,6 +405,56 @@ export default {
       } catch (error) {
         console.error('Failed to restore timer state:', error);
         this.clearTimerState();
+      }
+    },
+
+    async checkActiveTimer() {
+      if (!this.content.use_api || !this.content.endpoint_active) {
+        console.log('API not enabled or endpoint_active not configured');
+        return false;
+      }
+
+      try {
+        console.log('Checking for active timer via API...');
+        const response = await this.callAPI(
+          this.content.endpoint_active,
+          { user_id: this.content.user_id },
+          'POST'
+        );
+
+        console.log('Active timer API response:', response);
+
+        // Check if there's an active timer in the response
+        if (response && response.id && response.start_time) {
+          console.log('Active timer found:', response);
+
+          // Sync local state with API response
+          this.isRunning = true;
+          this.startTime = new Date(response.start_time).getTime();
+          this.timeEntryId = response.id;
+
+          // Calculate elapsed time
+          const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+          this.currentSeconds = elapsed;
+
+          console.log('Synced with active timer - elapsed:', elapsed);
+
+          // Start the interval to keep timer ticking
+          this.startInterval();
+
+          // Save state to localStorage
+          this.saveTimerState();
+
+          return true;
+        }
+
+        console.log('No active timer found');
+        return false;
+      } catch (error) {
+        console.error('Failed to check active timer:', error);
+        // Fall back to localStorage if API fails
+        this.restoreTimerState();
+        return this.isRunning;
       }
     }
   }
