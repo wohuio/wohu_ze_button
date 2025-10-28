@@ -164,11 +164,10 @@ export default {
       if (this.content.use_api && this.content.endpoint_toggle) {
         try {
           console.log('Starting timer with endpoint:', this.content.endpoint_toggle);
-          console.log('Sending data:', { user_id: this.content.user_id });
+          const startPayload = { user_id: this.content.user_id };
+          console.log('Sending data:', JSON.stringify(startPayload));
 
-          const response = await this.callAPI(this.content.endpoint_toggle, {
-            user_id: this.content.user_id
-          }, 'POST');
+          const response = await this.callAPI(this.content.endpoint_toggle, startPayload, 'POST');
 
           console.log('API response:', response);
 
@@ -218,14 +217,15 @@ export default {
       if (this.content.use_api && this.content.endpoint_toggle) {
         try {
           console.log('Stopping timer with endpoint:', this.content.endpoint_toggle);
-          console.log('Sending data:', { user_id: this.content.user_id, time_entry_id: this.timeEntryId });
 
-          const payload = { user_id: this.content.user_id };
+          const stopPayload = { user_id: this.content.user_id };
           if (this.timeEntryId) {
-            payload.time_entry_id = this.timeEntryId;
+            stopPayload.time_entry_id = this.timeEntryId;
           }
+          console.log('Sending data:', JSON.stringify(stopPayload));
 
-          await this.callAPI(this.content.endpoint_toggle, payload, 'POST');
+          const stopResponse = await this.callAPI(this.content.endpoint_toggle, stopPayload, 'POST');
+          console.log('Stop API response:', stopResponse);
 
           // Emit refresh event for WeWeb to reload collections
           this.$emit('trigger-event', {
@@ -299,6 +299,10 @@ export default {
         ? endpoint
         : `/_ww/endpoints/${endpoint}`;
 
+      console.log('Making API call to:', url);
+      console.log('Method:', method);
+      console.log('Body:', JSON.stringify(data));
+
       const response = await fetch(url, {
         method: method,
         headers: {
@@ -307,8 +311,19 @@ export default {
         body: JSON.stringify(data)
       });
 
+      console.log('Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+        // Try to get error details from response
+        let errorDetails = '';
+        try {
+          const errorBody = await response.text();
+          errorDetails = errorBody;
+          console.log('Error response body:', errorBody);
+        } catch (e) {
+          console.log('Could not parse error response');
+        }
+        throw new Error(`API call failed: ${response.status} ${response.statusText}. Details: ${errorDetails}`);
       }
 
       return await response.json();
