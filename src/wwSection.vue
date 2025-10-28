@@ -447,23 +447,37 @@ export default {
 
       try {
         console.log('Checking for active timer via API for user:', this.content.user_id);
-        const response = await this.callAPI(
-          this.content.endpoint_active,
-          { user_id: this.content.user_id },
-          'POST'
-        );
 
-        console.log('Active timer API response:', response);
+        // Try with query parameter instead of POST body
+        const url = `${this.content.endpoint_active}?user_id=${this.content.user_id}`;
+        console.log('Calling active timer API with GET:', url);
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Response status:', response.status, response.statusText);
+
+        if (!response.ok) {
+          console.error('Active timer API returned error:', response.status);
+          return false;
+        }
+
+        const data = await response.json();
+        console.log('Active timer API response:', data);
 
         // Check if there's an active timer with status "running"
         // API returns null or empty object if no active timer
-        if (response && response.id && response.start_time && response.status === 'running') {
-          console.log('Active timer found with status "running":', response);
+        if (data && data.id && data.start_time && data.status === 'running') {
+          console.log('Active timer found with status "running":', data);
 
           // Sync local state with API response
           this.isRunning = true;
-          this.startTime = new Date(response.start_time).getTime();
-          this.timeEntryId = response.id;
+          this.startTime = new Date(data.start_time).getTime();
+          this.timeEntryId = data.id;
 
           // Calculate elapsed time
           const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
