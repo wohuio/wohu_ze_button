@@ -167,13 +167,18 @@ export default {
         this.stopTimer();
       } else {
         // Check for active timer before starting
-        if (this.content.use_api) {
+        if (this.content.use_api && this.content.endpoint_active) {
+          console.log('Checking for active timer before start...');
           const hasActiveTimer = await this.checkActiveTimer();
           if (hasActiveTimer) {
-            console.log('Active timer found, continuing existing timer');
+            console.log('Active timer found and restored, not starting new timer');
+            // Update WeWeb variables after restore
+            this.setCurrentTimeVar(this.currentSeconds);
+            this.setIsRunningVar(this.isRunning);
             return; // Don't start a new timer, just continue the existing one
           }
         }
+        console.log('No active timer found, starting new timer');
         this.startTimer();
       }
     },
@@ -415,7 +420,7 @@ export default {
       }
 
       try {
-        console.log('Checking for active timer via API...');
+        console.log('Checking for active timer via API for user:', this.content.user_id);
         const response = await this.callAPI(
           this.content.endpoint_active,
           { user_id: this.content.user_id },
@@ -424,9 +429,10 @@ export default {
 
         console.log('Active timer API response:', response);
 
-        // Check if there's an active timer in the response
-        if (response && response.id && response.start_time) {
-          console.log('Active timer found:', response);
+        // Check if there's an active timer with status "running"
+        // API returns null or empty object if no active timer
+        if (response && response.id && response.start_time && response.status === 'running') {
+          console.log('Active timer found with status "running":', response);
 
           // Sync local state with API response
           this.isRunning = true;
@@ -437,7 +443,7 @@ export default {
           const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
           this.currentSeconds = elapsed;
 
-          console.log('Synced with active timer - elapsed:', elapsed);
+          console.log('Synced with active timer - ID:', this.timeEntryId, 'elapsed:', elapsed);
 
           // Start the interval to keep timer ticking
           this.startInterval();
@@ -448,13 +454,21 @@ export default {
           return true;
         }
 
-        console.log('No active timer found');
+        console.log('No active timer found or timer is not running');
+
+        // Clear local state if no active timer exists
+        this.isRunning = false;
+        this.currentSeconds = 0;
+        this.startTime = null;
+        this.timeEntryId = null;
+        this.clearTimerState();
+
         return false;
       } catch (error) {
         console.error('Failed to check active timer:', error);
-        // Fall back to localStorage if API fails
-        this.restoreTimerState();
-        return this.isRunning;
+        console.error('Error details:', error.message);
+        // Don't fall back to localStorage - if API fails, show clean state
+        return false;
       }
     }
   }
