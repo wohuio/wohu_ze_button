@@ -85,11 +85,16 @@ export default {
     };
   },
   mounted() {
-    this.restoreTimerState();
-    // Initialize WeWeb variables
+    // Initialize WeWeb variables first
     this.setUserIdVar(this.content.user_id || 297);
-    this.setCurrentTimeVar(this.currentSeconds);
-    this.setIsRunningVar(this.isRunning);
+
+    // Use nextTick to ensure component is fully initialized
+    this.$nextTick(() => {
+      this.restoreTimerState();
+      // Update WeWeb variables after restore
+      this.setCurrentTimeVar(this.currentSeconds);
+      this.setIsRunningVar(this.isRunning);
+    });
   },
   watch: {
     'content.user_id': {
@@ -345,11 +350,18 @@ export default {
     },
 
     restoreTimerState() {
+      const userId = this.content.user_id || 297;
+      console.log('Restoring timer state for user:', userId);
+
       const savedState = localStorage.getItem(this.storageKey);
-      if (!savedState) return;
+      if (!savedState) {
+        console.log('No saved timer state found for key:', this.storageKey);
+        return;
+      }
 
       try {
         const state = JSON.parse(savedState);
+        console.log('Loaded timer state:', state);
 
         if (state.isRunning && state.startTime) {
           // Restore timer state
@@ -361,10 +373,14 @@ export default {
           const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
           this.currentSeconds = elapsed;
 
+          console.log('Timer restored - elapsed seconds:', elapsed, 'isRunning:', this.isRunning);
+
           // Restart interval
           this.startInterval();
 
-          console.log('Timer restored:', { elapsed, timeEntryId: this.timeEntryId });
+          console.log('Timer interval started successfully');
+        } else {
+          console.log('Timer was not running, state:', state);
         }
       } catch (error) {
         console.error('Failed to restore timer state:', error);
