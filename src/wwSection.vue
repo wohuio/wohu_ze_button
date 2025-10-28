@@ -264,6 +264,9 @@ export default {
       this.timerInterval = setInterval(() => {
         this.currentSeconds++;
 
+        // Save state every tick to keep localStorage in sync
+        this.saveTimerState();
+
         // Emit tick event every second
         this.$emit('trigger-event', {
           name: 'timer_tick',

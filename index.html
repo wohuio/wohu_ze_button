@@ -440,6 +440,7 @@
                 currentEntry = running;
                 const elapsed = Math.floor((Date.now() - running.startTime) / 1000);
                 currentSeconds = elapsed;
+                updateDisplay();
                 startInterval();
             }
         }
