@@ -509,6 +509,9 @@ export default {
 
           console.log('Synced with active timer - ID:', this.timeEntryId, 'elapsed:', elapsed);
 
+          // Stop any existing interval before starting a new one to prevent multiple timers
+          this.stopInterval();
+
           // Start the interval to keep timer ticking
           this.startInterval();
 
@@ -519,6 +522,9 @@ export default {
         }
 
         console.log('No active timer found - status:', data?.status || 'unknown');
+
+        // Stop any running interval
+        this.stopInterval();
 
         // Clear local state if no active timer exists
         this.isRunning = false;
