@@ -79,6 +79,7 @@ export default {
   data() {
     return {
       timerInterval: null,
+      pollingInterval: null,
       currentSeconds: 0,
       isRunning: false,
       startTime: null,
@@ -123,6 +124,17 @@ export default {
       console.log('currentSeconds:', this.currentSeconds);
       console.log('timeEntryId:', this.timeEntryId);
     });
+
+    // Add visibility change listener for auto-sync when tab becomes visible
+    this.setupVisibilityListener();
+
+    // Add window focus listener for auto-sync when window gains focus
+    this.setupFocusListener();
+
+    // Start polling if API is enabled (check every 30 seconds)
+    if (this.content.use_api && this.content.endpoint_active) {
+      this.startPolling();
+    }
   },
   watch: {
     'content.user_id': {
@@ -180,6 +192,16 @@ export default {
   },
   beforeUnmount() {
     this.stopInterval();
+
+    // Clean up polling interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+
+    // Clean up event listeners
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('focus', this.handleWindowFocus);
   },
   methods: {
     async toggleTimer() {
@@ -510,6 +532,47 @@ export default {
         // Don't fall back to localStorage - if API fails, show clean state
         return false;
       }
+    },
+
+    // Auto-sync methods for cross-device synchronization
+    setupVisibilityListener() {
+      this.handleVisibilityChange = async () => {
+        if (!document.hidden && this.content.use_api && this.content.endpoint_active) {
+          console.log('Tab became visible, checking for timer updates...');
+          await this.checkActiveTimer();
+          this.setCurrentTimeVar(this.currentSeconds);
+          this.setIsRunningVar(this.isRunning);
+        }
+      };
+
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    },
+
+    setupFocusListener() {
+      this.handleWindowFocus = async () => {
+        if (this.content.use_api && this.content.endpoint_active) {
+          console.log('Window gained focus, checking for timer updates...');
+          await this.checkActiveTimer();
+          this.setCurrentTimeVar(this.currentSeconds);
+          this.setIsRunningVar(this.isRunning);
+        }
+      };
+
+      window.addEventListener('focus', this.handleWindowFocus);
+    },
+
+    startPolling() {
+      // Poll every 30 seconds to check for timer updates
+      this.pollingInterval = setInterval(async () => {
+        if (this.content.use_api && this.content.endpoint_active) {
+          console.log('Polling: checking for timer updates...');
+          await this.checkActiveTimer();
+          this.setCurrentTimeVar(this.currentSeconds);
+          this.setIsRunningVar(this.isRunning);
+        }
+      }, 30000); // 30 seconds
+
+      console.log('Polling started - will check for timer updates every 30 seconds');
     }
   }
 };
