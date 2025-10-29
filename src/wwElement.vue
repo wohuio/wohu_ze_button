@@ -493,14 +493,14 @@ export default {
         const data = await response.json();
         console.log('Active timer API response:', data);
 
-        // Check if there's an active timer with status "running"
-        // API returns null or empty object if no active timer
-        if (data && data.id && data.start_time && data.status === 'running') {
-          console.log('Active timer found with status "running":', data);
+        // Check if there's an active timer using new timer_status API
+        // API returns: { timer_active: bool, id: number|null, start_time: timestamp|null, status: string }
+        if (data && data.timer_active === true && data.id && data.start_time) {
+          console.log('Active timer found:', data);
 
           // Sync local state with API response
           this.isRunning = true;
-          this.startTime = new Date(data.start_time).getTime();
+          this.startTime = data.start_time; // Already a timestamp in milliseconds
           this.timeEntryId = data.id;
 
           // Calculate elapsed time
@@ -518,7 +518,7 @@ export default {
           return true;
         }
 
-        console.log('No active timer found or timer is not running');
+        console.log('No active timer found - status:', data?.status || 'unknown');
 
         // Clear local state if no active timer exists
         this.isRunning = false;
