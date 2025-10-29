@@ -238,7 +238,7 @@ export default {
         try {
           console.log('Starting timer with endpoint:', this.content.endpoint_toggle);
           const startPayload = {
-            user_id: this.content.user_id,
+            user_id: Number(this.content.user_id) || 297,
             clock_in: startTimestamp
           };
           console.log('Sending data:', JSON.stringify(startPayload));
@@ -296,7 +296,7 @@ export default {
 
           // Send user_id and clock_out timestamp
           const stopPayload = {
-            user_id: this.content.user_id,
+            user_id: Number(this.content.user_id) || 297,
             clock_out: stopTimestamp
           };
           console.log('Sending data:', JSON.stringify(stopPayload));
@@ -468,10 +468,12 @@ export default {
       }
 
       try {
-        console.log('Checking for active timer via API for user:', this.content.user_id);
+        // Ensure user_id is a number
+        const userId = Number(this.content.user_id) || 297;
+        console.log('Checking for active timer via API for user:', userId);
 
         // Try with query parameter instead of POST body
-        const url = `${this.content.endpoint_active}?user_id=${this.content.user_id}`;
+        const url = `${this.content.endpoint_active}?user_id=${userId}`;
         console.log('Calling active timer API with GET:', url);
 
         const response = await fetch(url, {
